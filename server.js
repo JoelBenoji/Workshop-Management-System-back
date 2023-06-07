@@ -1,6 +1,7 @@
 const User = require("./model/user")
 const mongoose = require("mongoose")
 const bodyParser = require("body-parser")
+
 var cors = require('cors')
 var events = require('events')
 var eventEmitter = new events.EventEmitter();
@@ -18,7 +19,7 @@ app.use(bodyParser.urlencoded(
 var info = {};
 
 //Post Request Handling
-app.post("/", (req, res) => {
+app.post("/signup", (req, res) => {
     response = {
         name: req.body.name,
         email: req.body.email,
@@ -30,10 +31,8 @@ app.post("/", (req, res) => {
     console.log(response)
     res.send("Registered")
     eventEmitter.emit('send')
-});
-
-const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
-var handler = function(){
+    const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
+    var handler = function(){
     //Send to Database
     const Users = new User({
         Name: info.name,
@@ -43,17 +42,44 @@ var handler = function(){
         Model: info.model,
     })
     Users.save();
-}
-const connect= async()=>{
+    }
+    const connect= async()=>{
     try{
         //Connect to Database
         mongoose.connect(url);
         eventEmitter.on('send',handler);    
     }catch(err){
         console.log(err);
-        res.status(404)
     }  
 }
-connect();
+    connect();
+});
+
+app.post("/",(req,res)=>{
+    response = {
+        Email : req.body.email,
+        Password: req.body.password
+    }
+    const connect=async()=>{
+        try{
+            const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
+            await mongoose.connect(url)
+            const log =await User.findOne({Email: req.body.email})
+            if(log.Password === req.body.password){
+                console.log("Login Success")
+                await res.json({"Success": "true",
+                "Name": log.Name,
+                "Make": log.Make,
+                "Model": log.Model})
+            }
+            else{
+                console.log("Failed")
+            }
+        }catch(err){
+            console.log(err)
+        }
+    }
+    connect();
+})
 
 app.listen(8080, console.log("Server Started at 8080"))
