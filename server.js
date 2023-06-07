@@ -22,6 +22,7 @@ app.post("/", (req, res) => {
     response = {
         name: req.body.name,
         email: req.body.email,
+        password: req.body.password,
         make: req.body.make,
         model: req.body.model
     };
@@ -37,6 +38,7 @@ var handler = function(){
     const Users = new User({
         Name: info.name,
         Email: info.email,
+        Password: info.password,
         Make: info.make,
         Model: info.model,
     })
@@ -46,9 +48,7 @@ const connect= async()=>{
     try{
         //Connect to Database
         mongoose.connect(url);
-        eventEmitter.on('send',handler);
-        const firstUser = await User.findOne({});
-        console.log(firstUser)
+        eventEmitter.on('send',handler);    
     }catch(err){
         console.log(err);
     }  
