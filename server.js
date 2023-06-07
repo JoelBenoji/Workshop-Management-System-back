@@ -51,6 +51,7 @@ const connect= async()=>{
         eventEmitter.on('send',handler);    
     }catch(err){
         console.log(err);
+        res.status(404)
     }  
 }
 connect();
