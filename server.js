@@ -4,7 +4,6 @@ const bodyParser = require("body-parser")
 
 var cors = require('cors')
 var events = require('events')
-var eventEmitter = new events.EventEmitter();
 
 const express = require("express")
 const app = express()
@@ -28,26 +27,30 @@ app.post("/signup", (req, res) => {
         model: req.body.model
     };
     info = response
-    console.log(response)
-    res.send("Registered")
-    eventEmitter.emit('send')
     const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
     var handler = function(){
     //Send to Database
-    const Users = new User({
-        Name: info.name,
-        Email: info.email,
-        Password: info.password,
-        Make: info.make,
-        Model: info.model,
-    })
-    Users.save();
     }
     const connect= async()=>{
     try{
         //Connect to Database
         mongoose.connect(url);
-        eventEmitter.on('send',handler);    
+        var Users = new User({
+            Name: info.name,
+            Email: info.email,
+            Password: info.password,
+            Make: info.make,
+            Model: info.model,
+        })
+        const result = await User.findOne({Email: info.email})
+
+        if(!result){
+            Users.save()
+            res.json({"Status":"Success"})
+        }
+        else{
+            res.json({"Status":"Failure"})
+        }
     }catch(err){
         console.log(err);
     }  
