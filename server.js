@@ -63,23 +63,27 @@ app.post("/",(req,res)=>{
         Email : req.body.email,
         Password: req.body.password
     }
-    const connect=async()=>{
-        try{
-            const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
-            await mongoose.connect(url)
-            const log =await User.findOne({Email: req.body.email})
-            if(log.Password === req.body.password){
+    const checksend=async(log)=>{
+        if(log.Password === req.body.password){
                 console.log("Login Success")
                 await res.json({"Success": "true",
                 "Name": log.Name,
                 "Make": log.Make,
                 "Model": log.Model})
             }
-            else{
+        else{
                 console.log("Failed")
             }
+    }
+    const connect=async()=>{
+        try{
+            const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
+            await mongoose.connect(url)
+            const log =await User.findOne({Email: req.body.email})
+            await checksend(log);
         }catch(err){
             console.log(err)
+            await res.json({"Success":"false"})
         }
     }
     connect();
