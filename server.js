@@ -2,8 +2,13 @@ const User = require("./model/user")
 const mongoose = require("mongoose")
 const bodyParser = require("body-parser")
 
+const {MongoClient} = require('mongodb')
+
 var cors = require('cors')
 var events = require('events')
+
+var uri = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
+const client = new MongoClient(uri)
 
 const express = require("express")
 const app = express()
@@ -16,8 +21,32 @@ app.use(bodyParser.urlencoded(
 ));
 
 var info = {};
-
-//Post Request Handling
+//Get Request Handling(Signup)
+app.get("/signup/make",async(req, res)=>{
+    var cars = []
+    try{
+        await client.connect();
+        const data = await client.db("Workshop").collection("Cars").find({},{Make:1}).toArray();
+        for(var i=0;i < data.length;i++){
+            if(cars.includes(data[i].Make)){
+                continue;
+            }
+            else{
+                await cars.push(data[i].Make)
+                cars.sort();
+            }
+        }
+        console.log(cars)
+    }catch(e){
+        console.log(e); 
+    }finally{
+        await client.close();
+    }
+    res.json({
+        Makes: cars
+    })
+})
+//Post Request Handling(Signup)
 app.post("/signup", (req, res) => {
     response = {
         name: req.body.name,
@@ -58,6 +87,7 @@ app.post("/signup", (req, res) => {
     connect();
 });
 
+//Post Request Handling(Login User)
 app.post("/",(req,res)=>{
     response = {
         Email : req.body.email,
@@ -65,7 +95,7 @@ app.post("/",(req,res)=>{
     }
     const checksend=async(log)=>{
         if(log.Password === req.body.password){
-                console.log("Login Success")
+                console.log("User Login Success")
                 await res.json({"Success": "true",
                 "Name": log.Name,
                 "Make": log.Make,
@@ -87,6 +117,34 @@ app.post("/",(req,res)=>{
         }
     }
     connect();
+})
+
+
+
+// Post Request Handling (Employee Login)
+app.post("/emplogin",(req,res)=>{
+    response = {
+        Empid : req.body.Empid,
+        Password : req.body.Password
+    }
+    const main =async()=>{
+        try{
+            await client.connect();
+            const data = await client.db("Workshop").collection("Employee").findOne({Empid : response.Empid});
+            if(data.Password == response.Password){
+                await res.json({"Success": "true",
+                "Name": data.Name,
+                "Phone": data.Phone
+                })
+                console.log("Employee Login Success")
+            }
+        }catch(e){
+            console.log(e); 
+        }finally{
+            await client.close();
+        }
+    }
+    main();
 })
 
 app.listen(8080, console.log("Server Started at 8080"))
