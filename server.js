@@ -36,7 +36,6 @@ app.get("/signup/make",async(req, res)=>{
                 cars.sort();
             }
         }
-        console.log(cars)
     }catch(e){
         console.log(e); 
     }finally{
@@ -46,6 +45,8 @@ app.get("/signup/make",async(req, res)=>{
         Makes: cars
     })
 })
+
+
 //Post Request Handling(Signup)
 app.post("/signup", (req, res) => {
     response = {
@@ -57,9 +58,6 @@ app.post("/signup", (req, res) => {
     };
     info = response
     const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
-    var handler = function(){
-    //Send to Database
-    }
     const connect= async()=>{
     try{
         //Connect to Database
@@ -86,6 +84,34 @@ app.post("/signup", (req, res) => {
 }
     connect();
 });
+
+app.post("/signup/model",async(req, res)=>{
+    var models= []
+    response = {
+        Make: req.body.Make
+    }
+    try{
+        await client.connect();
+        const data = await client.db("Workshop").collection("Cars").find({Make: response.Make }).toArray();
+        for(var i=0;i < data.length;i++){
+            if(models.includes(data[i].Model)){
+                continue;
+            }
+            else{
+                await models.push(data[i].Model)
+                models.sort();
+            }
+        }
+        console.log(models)
+        if(models !== []){
+            res.json({
+                Models: models
+            })
+        }
+    }catch(e){
+        console.log(e); 
+    }
+})
 
 //Post Request Handling(Login User)
 app.post("/",(req,res)=>{
@@ -140,8 +166,6 @@ app.post("/emplogin",(req,res)=>{
             }
         }catch(e){
             console.log(e); 
-        }finally{
-            await client.close();
         }
     }
     main();
