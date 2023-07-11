@@ -102,7 +102,6 @@ app.post("/signup/model",async(req, res)=>{
                 models.sort();
             }
         }
-        console.log(models)
         if(models !== []){
             res.json({
                 Models: models
@@ -114,7 +113,7 @@ app.post("/signup/model",async(req, res)=>{
 })
 
 //Post Request Handling(Login User)
-app.post("/",(req,res)=>{
+app.post("/",async(req,res)=>{
     response = {
         Email : req.body.email,
         Password: req.body.password
@@ -125,7 +124,9 @@ app.post("/",(req,res)=>{
                 await res.json({"Success": "true",
                 "Name": log.Name,
                 "Make": log.Make,
-                "Model": log.Model})
+                "Model": log.Model,
+                "Email": response.email,
+            })
             }
         else{
                 console.log("Failed")
@@ -143,9 +144,63 @@ app.post("/",(req,res)=>{
         }
     }
     connect();
+    applist(req.body.email)
 })
 
 
+
+//Appointment List function User
+const applist=(email)=>{
+    app.get('/user/dashboard',async(req,res)=>{
+        var appointments = []
+        const listget=async()=>{
+            try{
+                await client.connect()
+                const data = await client.db("Workshop").collection("Appointments").find({
+                    Email : email
+                }).toArray()
+                appointments = data
+                await res.json(appointments)
+            }
+            catch(e){
+                console.log(e)
+            }
+        }
+        listget()
+    })
+}
+
+
+//New Appointment
+app.post("/user/dashboard",async(req,res)=>{
+    response = {
+        Name: req.body.name,
+        Email: req.body.email,
+        Category : req.body.category,
+        Date: req.body.date,
+        Description: req.body.desc
+    }
+    console.log(response)
+    const connect=async()=>{
+        try{
+            await client.connect();
+            const data = await client.db("Workshop").collection("Appointments").insertOne({
+                Name: response.Name,
+                Email: response.Email,
+                Date: response.Date,
+                Category : response.Category,
+                Description: response.Description,
+                Status: 'pending',
+                Empid: null,
+            })
+        }catch(err){
+            console.log(err)
+            await res.json({"Success":"false"})
+        }
+    }
+    connect();
+    applist(req.body.email)
+})
 
 // Post Request Handling (Employee Login)
 app.post("/emplogin",(req,res)=>{
