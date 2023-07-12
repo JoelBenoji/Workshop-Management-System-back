@@ -1,6 +1,7 @@
 const User = require("./model/user")
 const mongoose = require("mongoose")
 const bodyParser = require("body-parser")
+var ObjectID = require('mongodb').ObjectID;
 
 const {MongoClient} = require('mongodb')
 
@@ -127,6 +128,7 @@ app.post("/",async(req,res)=>{
                 "Model": log.Model,
                 "Email": response.email,
             })
+                applist(response.email)
             }
         else{
                 console.log("Failed")
@@ -144,7 +146,6 @@ app.post("/",async(req,res)=>{
         }
     }
     connect();
-    applist(req.body.email)
 })
 
 
@@ -159,6 +160,7 @@ const applist=(email)=>{
                 const data = await client.db("Workshop").collection("Appointments").find({
                     Email : email
                 }).toArray()
+                console.log(data)
                 appointments = data
                 await res.json(appointments)
             }
@@ -178,7 +180,9 @@ app.post("/user/dashboard",async(req,res)=>{
         Email: req.body.email,
         Category : req.body.category,
         Date: req.body.date,
-        Description: req.body.desc
+        Description: req.body.desc,
+        Make: req.body.make,
+        Model:req.body.model,
     }
     console.log(response)
     const connect=async()=>{
@@ -188,6 +192,8 @@ app.post("/user/dashboard",async(req,res)=>{
                 Name: response.Name,
                 Email: response.Email,
                 Date: response.Date,
+                Make: response.Make,
+                Model: response.Model,
                 Category : response.Category,
                 Description: response.Description,
                 Status: 'pending',
@@ -199,7 +205,7 @@ app.post("/user/dashboard",async(req,res)=>{
         }
     }
     connect();
-    applist(req.body.email)
+    applist(response.email)
 })
 
 // Post Request Handling (Employee Login)
@@ -215,8 +221,10 @@ app.post("/emplogin",(req,res)=>{
             if(data.Password == response.Password){
                 await res.json({"Success": "true",
                 "Name": data.Name,
-                "Phone": data.Phone
+                "Phone": data.Phone,
+                "Category": data.Category,
                 })
+                await applist(data.Category)
                 console.log("Employee Login Success")
             }
         }catch(e){
@@ -224,6 +232,58 @@ app.post("/emplogin",(req,res)=>{
         }
     }
     main();
+})
+
+//Appointment View Employee
+app.get('/emp/dashboard/Electrical',async(req,res)=>{
+    try{
+        await client.connect()
+        const data = await client.db("Workshop").collection("Appointments").find({
+            Status: "pending",
+            Category: 'Electrical'
+        }).toArray()
+        await res.json(data)
+        console.log(data)
+    }catch(e){
+        console.log(e)
+    }
+})
+app.get('/emp/dashboard/General',async(req,res)=>{
+    try{
+        await client.connect()
+        const data = await client.db("Workshop").collection("Appointments").find({
+            Status: "pending",
+            Category: 'General'
+        }).toArray()
+        await res.json(data)
+        console.log(data)
+    }catch(e){
+        console.log(e)
+    }
+})
+app.post('/emp/dashboard',async(req,res)=>{
+    
+    response = {
+        id: req.body.id,
+        Status: req.body.Status,
+        Empid: req.body.Empid,
+    }
+    console.log(response)
+    try{
+        await client.connect()
+        const data = await client.db('Workshop').collection('Appointments').updateOne({
+            _id: new mongoose.Types.ObjectId(response.id)
+        },{
+            $set:{
+                Status: 'Accepted',
+                Empid: response.Empid
+            }
+        }
+        )
+        console.log(data)
+    }catch(e){
+        console.log(e)
+    }
 })
 
 app.listen(8080, console.log("Server Started at 8080"))
