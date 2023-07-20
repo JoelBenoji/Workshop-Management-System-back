@@ -22,6 +22,31 @@ app.use(bodyParser.urlencoded(
 ));
 
 var info = {};
+
+//Admin Login
+app.post('/adminlogin', async (req, res) => {
+    response = {
+        Password: req.body.Password
+    }
+    try {
+        await client.connect();
+        const data = await client.db("Workshop").collection("Admin").findOne();
+
+        if (data.Password === response.Password) {
+            console.log('Admin Login Success')
+            res.json({
+                Name: data.Name
+            })
+        }
+        else{
+            console.log('Admin Login Failed')
+        }
+    }catch(e){
+        console.log(e)
+    }
+})
+
+
 //Get Request Handling(Signup)
 app.get("/signup/make", async (req, res) => {
     var cars = []
@@ -231,7 +256,7 @@ app.post("/user/dashboard/newappoint", async (req, res) => {
 })
 
 //Payment for Appointment 
-app.post('/user/dashboard/payment',async(req,res)=>{
+app.post('/user/dashboard/payment', async (req, res) => {
     response = {
         Status: req.body.Status,
         id: req.body.id
@@ -436,31 +461,31 @@ app.post('/emp/dashboard/jobselect', async (req, res) => {
 
 })
 
-app.post('/emp/markfinish',async (req,res)=>{
+app.post('/emp/markfinish', async (req, res) => {
     response = {
         Cost: parseInt(req.body.Cost),
         id: req.body.id
     }
     await client.connect()
-        try{
-            const check = await client.db('Workshop').collection('Appointments').updateOne({
-                _id: new mongoose.Types.ObjectId(response.id)
-            }
-            ,{
+    try {
+        const check = await client.db('Workshop').collection('Appointments').updateOne({
+            _id: new mongoose.Types.ObjectId(response.id)
+        }
+            , {
                 $set: {
-                    'Status':'Finished',
+                    'Status': 'Finished',
                     'Cost': response.Cost,
-                    'Amount': (response.Cost + (25*(response.Cost)/100))
+                    'Amount': (response.Cost + (25 * (response.Cost) / 100))
                 }
             }
-            )
-            await res.json({
-                'Message': 'Job Marked as Finished'
-            })
-        }
-        catch(e){
-            console.log(e)
-        }
+        )
+        await res.json({
+            'Message': 'Job Marked as Finished'
+        })
+    }
+    catch (e) {
+        console.log(e)
+    }
 })
 
 app.listen(8080, console.log("Server Started at 8080"))
