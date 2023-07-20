@@ -46,6 +46,86 @@ app.post('/adminlogin', async (req, res) => {
     }
 })
 
+//Emergency Services
+app.post('/emergency/',async(req,res)=>{
+    response = {
+        Name: req.body.Name,
+        Phone: req.body.Phone,
+        Description: req.body.Description,
+        Latitude: req.body.Latitude,
+        Longitude: req.body.Longitude
+    }
+    try{
+        var data
+        console.log(response)
+        await client.connect();
+        const check = await client.db('Workshop').collection("Emergency").findOne()
+
+        if(check === null){
+            data = await client.db("Workshop").collection("Emergency").insertOne({
+                Name: response.Name,
+                Phone: response.Phone,
+                Description: response.Description,
+                Latitude: response.Latitude,
+                Longitude: response.Longitude,
+                Status: 'Active'
+            })
+        }
+        else{
+            data = {
+                Status: 'Failed'
+            }
+        }
+        res.send(data)
+    }catch(e){
+        console.log(e)
+    }
+})
+//Emergency Get
+app.get('/emergencydata/', async(req,res)=>{
+    await client.connect()
+    const data = await client.db("Workshop").collection("Emergency").find();
+    res.send(data) 
+})
+
+//Employee List Data
+app.get('/admin/emplist',async(req,res)=>{
+    try{
+        await client.connect();
+        const data = await client.db("Workshop").collection("Employee").find().toArray(); 
+
+        const appointment = await client.db("Workshop").collection("Appointments").find({
+            Status: 'On Work'
+        }).toArray();
+
+        for(var i = 0; i < appointment.length; i++){
+            for(var j = 0;j < data.length; j++){
+                if(appointment[i].Empid === data[j].Empid){
+                    data[j] = {
+                        Empid : data[j].Empid,
+                        Name: data[j].Name,
+                        Category: data[j].Category,
+                        CustomerName: appointment[i].Name,
+                        CustomerEmail: appointment[i].Email,
+                        Status: appointment[i].Status,
+                        Description: appointment[i].Description
+                    }
+                }
+            }
+        }
+        await res.json(data)
+    }catch(e){
+        console.log(e)
+    }
+})
+
+// User List in Admin Page
+app.get('/admin/userlist',async(req,res)=>{
+    await client.connect();
+    const data = await client.db("Workshop").collection("users").find().toArray(); 
+    console.log(data)
+    await res.json(data)
+})
 
 //Get Request Handling(Signup)
 app.get("/signup/make", async (req, res) => {
