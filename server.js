@@ -186,12 +186,13 @@ app.post("/user/dashboard/newappoint", async (req, res) => {
             const check = await client.db('Workshop').collection('Appointments').find({
                 Email: response.Email
             }).toArray()
+            console.log(check)
             if (check === []) {
                 flag = true
             }
             else {
                 for (i = 0; i < check.length; i++) {
-                    if (check[i].status === 'Finished') {
+                    if (check[i].Status === 'Paid') {
                         flag = true
                     }
                     else {
@@ -220,7 +221,6 @@ app.post("/user/dashboard/newappoint", async (req, res) => {
                 await res.json({
                     "Status": "Pending Appointments to be completed"
                 })
-                console.log("On submit mail" + response.Email)
             }
         } catch (err) {
             console.log(err)
@@ -228,6 +228,22 @@ app.post("/user/dashboard/newappoint", async (req, res) => {
         }
     }
     connect();
+})
+
+//Payment for Appointment 
+app.post('/user/dashboard/payment',async(req,res)=>{
+    response = {
+        Status: req.body.Status,
+        id: req.body.id
+    }
+    await client.connect()
+    const data = await client.db('Workshop').collection('Appointments').updateOne({
+        _id: new mongoose.Types.ObjectId(response.id)
+    }, {
+        $set: {
+            Status: 'Paid',
+        }
+    })
 })
 
 // Post Request Handling (Employee Login)
@@ -329,6 +345,8 @@ app.post('/emp/dashboard/joblist', async (req, res) => {
         console.log(e)
     }
 })
+
+//Job Select System
 app.post('/emp/dashboard', async (req, res) => {
 
     response = {
@@ -336,7 +354,6 @@ app.post('/emp/dashboard', async (req, res) => {
         Status: req.body.Status,
         Empid: req.body.Empid,
     }
-    console.log(response)
     try {
         await client.connect()
         const data = await client.db('Workshop').collection('Appointments').updateOne({
@@ -352,6 +369,98 @@ app.post('/emp/dashboard', async (req, res) => {
     } catch (e) {
         console.log(e)
     }
+})
+
+//Job Workflow
+app.post('/emp/dashboard/joblistcurr', async (req, res) => {
+    response = {
+        Empid: req.body.Empid
+    }
+    try {
+        await client.connect()
+        const check = await client.db('Workshop').collection('Appointments').findOne({
+            Empid: response.Empid,
+            Status: 'On Work'
+        })
+        await res.json(check)
+    } catch (e) {
+        console.log(e)
+    }
+})
+
+app.post('/emp/dashboard/jobselect', async (req, res) => {
+    response = {
+        Empid: req.body.Empid,
+        id: req.body.id
+    }
+    try {
+        await client.connect()
+        const check = await client.db('Workshop').collection('Appointments').find({
+            Empid: response.Empid,
+        }).toArray()
+        var flag = false
+        for (i = 0; i < check.length; i++) {
+            if (check[i].Status === 'On Work') {
+                flag = true
+                break
+            }
+            else {
+                flag = false
+            }
+        }
+        if (flag === true) {
+            await res.json({
+                Message: 'Complete a job before taking in another'
+            })
+        }
+        else {
+            const data = await client.db('Workshop').collection('Appointments').updateOne({
+                _id: new mongoose.Types.ObjectId(response.id)
+            }, {
+                $set: {
+                    Status: 'On Work',
+                }
+            })
+            await res.json({
+                Name: data.Name,
+                Date: data.Date,
+                Make: data.Make,
+                Model: data.Model,
+                Cost: data.Cost,
+                Message: 'Added Successfully'
+            })
+        }
+    } catch (e) {
+        console.log(e)
+    }
+
+})
+
+app.post('/emp/markfinish',async (req,res)=>{
+    response = {
+        Cost: parseInt(req.body.Cost),
+        id: req.body.id
+    }
+    await client.connect()
+        try{
+            const check = await client.db('Workshop').collection('Appointments').updateOne({
+                _id: new mongoose.Types.ObjectId(response.id)
+            }
+            ,{
+                $set: {
+                    'Status':'Finished',
+                    'Cost': response.Cost,
+                    'Amount': (response.Cost + (25*(response.Cost)/100))
+                }
+            }
+            )
+            await res.json({
+                'Message': 'Job Marked as Finished'
+            })
+        }
+        catch(e){
+            console.log(e)
+        }
 })
 
 app.listen(8080, console.log("Server Started at 8080"))
