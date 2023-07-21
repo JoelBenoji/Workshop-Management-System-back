@@ -23,6 +23,49 @@ app.use(bodyParser.urlencoded(
 
 var info = {};
 
+//Emergency Services
+app.post('/emergency/', async (req, res) => {
+    response = {
+        Name: req.body.Name,
+        Phone: req.body.Phone,
+        Description: req.body.Description,
+        Latitude: req.body.Latitude,
+        Longitude: req.body.Longitude
+    }
+    try {
+        var data
+        console.log(response)
+        await client.connect();
+        const check = await client.db('Workshop').collection("Emergency").findOne()
+
+        if (check === null) {
+            data = await client.db("Workshop").collection("Emergency").insertOne({
+                Name: response.Name,
+                Phone: response.Phone,
+                Description: response.Description,
+                Latitude: response.Latitude,
+                Longitude: response.Longitude,
+                Status: 'Active'
+            })
+        }
+        else {
+            data = {
+                Status: 'Failed'
+            }
+        }
+        res.send(data)
+    } catch (e) {
+        console.log(e)
+    }
+})
+//Emergency Get
+app.get('/emergencydata/', async (req, res) => {
+    await client.connect()
+    const data = await client.db("Workshop").collection("Emergency").find();
+    res.send(data)
+})
+
+
 //Admin Login
 app.post('/adminlogin', async (req, res) => {
     response = {
@@ -38,71 +81,29 @@ app.post('/adminlogin', async (req, res) => {
                 Name: data.Name
             })
         }
-        else{
+        else {
             console.log('Admin Login Failed')
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
     }
-})
-
-//Emergency Services
-app.post('/emergency/',async(req,res)=>{
-    response = {
-        Name: req.body.Name,
-        Phone: req.body.Phone,
-        Description: req.body.Description,
-        Latitude: req.body.Latitude,
-        Longitude: req.body.Longitude
-    }
-    try{
-        var data
-        console.log(response)
-        await client.connect();
-        const check = await client.db('Workshop').collection("Emergency").findOne()
-
-        if(check === null){
-            data = await client.db("Workshop").collection("Emergency").insertOne({
-                Name: response.Name,
-                Phone: response.Phone,
-                Description: response.Description,
-                Latitude: response.Latitude,
-                Longitude: response.Longitude,
-                Status: 'Active'
-            })
-        }
-        else{
-            data = {
-                Status: 'Failed'
-            }
-        }
-        res.send(data)
-    }catch(e){
-        console.log(e)
-    }
-})
-//Emergency Get
-app.get('/emergencydata/', async(req,res)=>{
-    await client.connect()
-    const data = await client.db("Workshop").collection("Emergency").find();
-    res.send(data) 
 })
 
 //Employee List Data
-app.get('/admin/emplist',async(req,res)=>{
-    try{
+app.get('/admin/emplist', async (req, res) => {
+    try {
         await client.connect();
-        const data = await client.db("Workshop").collection("Employee").find().toArray(); 
+        const data = await client.db("Workshop").collection("Employee").find().toArray();
 
         const appointment = await client.db("Workshop").collection("Appointments").find({
             Status: 'On Work'
         }).toArray();
 
-        for(var i = 0; i < appointment.length; i++){
-            for(var j = 0;j < data.length; j++){
-                if(appointment[i].Empid === data[j].Empid){
+        for (var i = 0; i < appointment.length; i++) {
+            for (var j = 0; j < data.length; j++) {
+                if (appointment[i].Empid === data[j].Empid) {
                     data[j] = {
-                        Empid : data[j].Empid,
+                        Empid: data[j].Empid,
                         Name: data[j].Name,
                         Category: data[j].Category,
                         CustomerName: appointment[i].Name,
@@ -114,16 +115,34 @@ app.get('/admin/emplist',async(req,res)=>{
             }
         }
         await res.json(data)
+    } catch (e) {
+        console.log(e)
+    }
+})
+//Emergency List in Admin Page
+app.get('/admin/emergency',async(req,res)=>{
+    try{
+        await client.connect();
+        const data = await client.db("Workshop").collection("Emergency").findOne()
+
+        await res.json(data)
     }catch(e){
         console.log(e)
     }
 })
-
+//Emergency Mark Finish
+app.post('/admin/emer/markfinish',async(req,res)=>{
+    try{
+        await client.connect();
+        const data = await client.db("Workshop").collection("Emergency").deleteOne()
+    }catch(e){
+        console.log(e)
+    }
+})
 // User List in Admin Page
-app.get('/admin/userlist',async(req,res)=>{
+app.get('/admin/userlist', async (req, res) => {
     await client.connect();
-    const data = await client.db("Workshop").collection("users").find().toArray(); 
-    console.log(data)
+    const data = await client.db("Workshop").collection("users").find().toArray();
     await res.json(data)
 })
 
