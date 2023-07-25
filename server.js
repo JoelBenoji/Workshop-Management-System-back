@@ -3,6 +3,8 @@ const mongoose = require("mongoose")
 const bodyParser = require("body-parser")
 var ObjectID = require('mongodb').ObjectID;
 
+var bcrypt = require('bcrypt')
+
 const { MongoClient } = require('mongodb')
 
 var cors = require('cors')
@@ -22,7 +24,6 @@ app.use(bodyParser.urlencoded(
 ));
 
 var info = {};
-
 //Emergency Services
 app.post('/emergency/', async (req, res) => {
     response = {
@@ -74,8 +75,8 @@ app.post('/adminlogin', async (req, res) => {
     try {
         await client.connect();
         const data = await client.db("Workshop").collection("Admin").findOne();
-
-        if (data.Password === response.Password) {
+        var checkPass = await bcrypt.compare(response.Password, data.Password)
+        if (checkPass === true) {
             console.log('Admin Login Success')
             res.json({
                 "Success": "true",
@@ -106,7 +107,7 @@ app.get('/admin/emplist', async (req, res) => {
             Status: 'Accepted'
         }).toArray();
 
-        const appointment = [...appointmentonwork,...appointmentaccepted]
+        const appointment = [...appointmentonwork, ...appointmentaccepted]
 
         for (var i = 0; i < appointment.length; i++) {
             for (var j = 0; j < data.length; j++) {
@@ -129,22 +130,22 @@ app.get('/admin/emplist', async (req, res) => {
     }
 })
 //Emergency List in Admin Page
-app.get('/admin/emergency',async(req,res)=>{
-    try{
+app.get('/admin/emergency', async (req, res) => {
+    try {
         await client.connect();
         const data = await client.db("Workshop").collection("Emergency").findOne()
 
         await res.json(data)
-    }catch(e){
+    } catch (e) {
         console.log(e)
     }
 })
 //Emergency Mark Finish
-app.post('/admin/emer/markfinish',async(req,res)=>{
-    try{
+app.post('/admin/emer/markfinish', async (req, res) => {
+    try {
         await client.connect();
         const data = await client.db("Workshop").collection("Emergency").deleteOne()
-    }catch(e){
+    } catch (e) {
         console.log(e)
     }
 })
@@ -192,17 +193,17 @@ app.post("/signup", (req, res) => {
     };
     info = response
     var check = new RegExp(/^[a-z0-9]+@[a-z]+\.[a-z]{2,3}$/)
-    let isValid = check.test(response.email) 
+    let isValid = check.test(response.email)
     const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
     const connect = async () => {
         try {
             //Connect to Database
             mongoose.connect(url);
-            if(isValid){
+            if (isValid) {
                 var Users = new User({
                     Name: info.name,
                     Email: info.email,
-                    Password: info.password,
+                    Password: await bcrypt.hash(info.password, 10),
                     Make: info.make,
                     Model: info.model,
                 })
@@ -215,8 +216,8 @@ app.post("/signup", (req, res) => {
                     res.json({ "Status": "User already exists" })
                 }
             }
-            else{
-                res.json({"Status": "Invalid email id"})
+            else {
+                res.json({ "Status": "Invalid email id" })
             }
         } catch (err) {
             console.log(err);
@@ -279,7 +280,7 @@ app.post("/", (req, res) => {
         Password: req.body.password
     }
     const checksend = async (log) => {
-        if (log.Password === req.body.password) {
+        if (await bcrypt.compare(req.body.password,log.Password)) {
             console.log("User Login Success")
             res.json({
                 "Success": "true",
@@ -407,7 +408,7 @@ app.post("/emplogin", (req, res) => {
                 })
                 console.log("Employee Login Success")
             }
-            else{
+            else {
                 await res.json({
                     "Success": "Invalid Credentials"
                 })
