@@ -78,10 +78,14 @@ app.post('/adminlogin', async (req, res) => {
         if (data.Password === response.Password) {
             console.log('Admin Login Success')
             res.json({
+                "Success": "true",
                 Name: data.Name
             })
         }
         else {
+            res.json({
+                "Success": "Invalid Credentials"
+            })
             console.log('Admin Login Failed')
         }
     } catch (e) {
@@ -95,9 +99,14 @@ app.get('/admin/emplist', async (req, res) => {
         await client.connect();
         const data = await client.db("Workshop").collection("Employee").find().toArray();
 
-        const appointment = await client.db("Workshop").collection("Appointments").find({
+        const appointmentonwork = await client.db("Workshop").collection("Appointments").find({
             Status: 'On Work'
         }).toArray();
+        const appointmentaccepted = await client.db("Workshop").collection("Appointments").find({
+            Status: 'Accepted'
+        }).toArray();
+
+        const appointment = [...appointmentonwork,...appointmentaccepted]
 
         for (var i = 0; i < appointment.length; i++) {
             for (var j = 0; j < data.length; j++) {
@@ -182,26 +191,32 @@ app.post("/signup", (req, res) => {
         model: req.body.model
     };
     info = response
+    var check = new RegExp(/^[a-z0-9]+@[a-z]+\.[a-z]{2,3}$/)
+    let isValid = check.test(response.email) 
     const url = 'mongodb+srv://arjun:arjun@workshop.1les3e8.mongodb.net/Workshop?retryWrites=true&w=majority'
     const connect = async () => {
         try {
             //Connect to Database
             mongoose.connect(url);
-            var Users = new User({
-                Name: info.name,
-                Email: info.email,
-                Password: info.password,
-                Make: info.make,
-                Model: info.model,
-            })
-            const result = await User.findOne({ Email: info.email })
-
-            if (!result) {
-                Users.save()
-                res.json({ "Status": "Success" })
+            if(isValid){
+                var Users = new User({
+                    Name: info.name,
+                    Email: info.email,
+                    Password: info.password,
+                    Make: info.make,
+                    Model: info.model,
+                })
+                const result = await User.findOne({ Email: info.email })
+                if (!result) {
+                    Users.save()
+                    res.json({ "Status": "Success" })
+                }
+                else {
+                    res.json({ "Status": "User already exists" })
+                }
             }
-            else {
-                res.json({ "Status": "Failure" })
+            else{
+                res.json({"Status": "Invalid email id"})
             }
         } catch (err) {
             console.log(err);
@@ -276,6 +291,9 @@ app.post("/", (req, res) => {
         }
         else {
             console.log("Failed")
+            res.json({
+                'Success': "Invalid Credentials"
+            })
         }
     }
     const connect = async () => {
@@ -388,6 +406,11 @@ app.post("/emplogin", (req, res) => {
                     "Category": data.Category,
                 })
                 console.log("Employee Login Success")
+            }
+            else{
+                await res.json({
+                    "Success": "Invalid Credentials"
+                })
             }
         } catch (e) {
             console.log(e);
