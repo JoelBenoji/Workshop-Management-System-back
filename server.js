@@ -149,6 +149,39 @@ app.post('/admin/emer/markfinish', async (req, res) => {
         console.log(e)
     }
 })
+
+//Appointment List in Admin Page
+app.get('/admin/appointments', async(req,res)=>{
+    await client.connect();
+    const data = await client.db("Workshop").collection("Appointments").find({Status: 'Pending'}).toArray();
+    await res.json(data)
+})
+
+//Verify Appintment
+app.post('/admin/verify', async(req,res)=>{
+    response = {
+        id: req.body._id
+    }
+    try{
+        await client.connect()
+    const data = await client.db('Workshop').collection('Appointments').updateOne({
+        _id: new mongoose.Types.ObjectId(response.id)
+    }, {
+        $set: {
+            Status: 'Verified',
+        }
+    })
+    res.json({
+        Status: 'Appointment Verified'
+    })
+    }catch(e){
+        console.log(e)
+        await res.json({
+            Status: e
+        })
+    }
+})
+
 // User List in Admin Page
 app.get('/admin/userlist', async (req, res) => {
     await client.connect();
@@ -425,7 +458,7 @@ app.get('/emp/dashboard/Electrical', async (req, res) => {
     try {
         await client.connect()
         const data = await client.db("Workshop").collection("Appointments").find({
-            Status: "Pending",
+            Status: "Verified",
             Category: 'Electrical'
         }).toArray()
         await res.json(data)
@@ -437,7 +470,7 @@ app.get('/emp/dashboard/General', async (req, res) => {
     try {
         await client.connect()
         const data = await client.db("Workshop").collection("Appointments").find({
-            Status: "Pending",
+            Status: "Verified",
             Category: 'General'
         }).toArray()
         await res.json(data)
@@ -449,7 +482,7 @@ app.get('/emp/dashboard/Body Work', async (req, res) => {
     try {
         await client.connect()
         const data = await client.db("Workshop").collection("Appointments").find({
-            Status: "Pending",
+            Status: "Verified",
             Category: 'Body Work'
         }).toArray()
         await res.json(data)
@@ -461,7 +494,7 @@ app.get('/emp/dashboard/Air Conditioning', async (req, res) => {
     try {
         await client.connect()
         const data = await client.db("Workshop").collection("Appointments").find({
-            Status: "Pending",
+            Status: "Verified",
             Category: 'Air Conditioning'
         }).toArray()
         await res.json(data)
@@ -473,7 +506,7 @@ app.get('/emp/dashboard/Engine Specialist', async (req, res) => {
     try {
         await client.connect()
         const data = await client.db("Workshop").collection("Appointments").find({
-            Status: "Pending",
+            Status: "Verified",
             Category: 'Engine Specialist'
         }).toArray()
         await res.json(data)
@@ -513,7 +546,9 @@ app.post('/emp/dashboard', async (req, res) => {
             }
         }
         )
-        console.log(data)
+        await res.json(
+            {Status: 'Accepted Job'}
+        )
     } catch (e) {
         console.log(e)
     }
